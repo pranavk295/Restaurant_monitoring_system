@@ -1,5 +1,6 @@
 from django.db import models
 
+'''Initializes the models required for the application'''
 
 class StoreZone(models.Model):
     store_id=models.CharField(max_length=50,primary_key=True)

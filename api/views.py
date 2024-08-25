@@ -14,11 +14,14 @@ from .serializers import ReportSerializer
 from .models import StoreHour,StoreReport,StoreZone,StoreStatus,ReportStatus
 
 def convert_to_local(utc_time_str,timezone):
+    '''Converts timestamp in utc to local time.'''
     local_timezone = pytz.timezone(timezone)
     local_time = utc_time_str.astimezone(local_timezone)
     return local_time
 
+
 def generate_report(store):
+    '''Calculates the uptime and downtime per store using a simple interpolation logic.'''
     uptime_last_hour=0
     uptime_last_week=0
     uptime_last_day=0
@@ -61,7 +64,9 @@ def generate_report(store):
     downtime_last_week=24*7-uptime_last_week
     return [store.store_id,uptime_last_hour,uptime_last_day,uptime_last_week,downtime_last_hour,downtime_last_day,downtime_last_week]
 
+
 def create_csv(report,csv_data):
+   '''Creates the CSV file from the report generated.'''
    with tempfile.TemporaryDirectory() as temp_dir:
         file_name = f"{report.pk}.csv"
         temp_file_path = os.path.join(temp_dir, file_name)
@@ -77,10 +82,12 @@ def create_csv(report,csv_data):
 
 @shared_task
 def generate_report_task(report_id):
+    '''Creates the report as a background task with the help of celery.'''
     report = StoreReport.objects.get(report_id=report_id)
     csv_data = []
 
     results = StoreZone.objects.all()
+    # generates report for first 2000 stores.
     for store in results[:2000]:
         data = generate_report(store)
         csv_data.append(data)
@@ -92,6 +99,7 @@ def generate_report_task(report_id):
 
 @api_view(['GET'])
 def trigger_report(request):
+    '''Handles 'trigger_report/' api request and returns unique report id to access the report once generated.'''
     r_id=str(uuid.uuid4())
     report=StoreReport.objects.create(report_id=r_id,status=ReportStatus.PENDING)
     generate_report_task.delay(report.report_id)
@@ -100,6 +108,7 @@ def trigger_report(request):
 
 @api_view(['GET'])
 def get_report(request, report_id):
+    '''Handles 'get_report/' api request.'''
     try:
         report = StoreReport.objects.get(report_id=report_id)
     except StoreReport.DoesNotExist:

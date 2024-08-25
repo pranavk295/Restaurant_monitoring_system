@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import StoreZone, StoreHour, StoreStatus,StoreReport
-
+'''Initializes serialisers for easy conversion from python object to json equivalent format'''
 class StoreZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoreZone
